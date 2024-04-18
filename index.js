@@ -6,13 +6,9 @@ class CandyCrush extends Phaser.Scene {
 
     preload() {
         // Load candy images
-        this.load.image('Layer 1', 'assets/Layer 1.png');
-        this.load.image('Layer 2', 'assets/Layer 2.png');
-        this.load.image('Layer 3', 'assets/Layer 3.png');
-        this.load.image('Layer 4', 'assets/Layer 4.png');
-        this.load.image('Layer 5', 'assets/Layer 5.png');
-        this.load.image('Layer 6', 'assets/Layer 6.png');
-        this.load.image('Layer 7', 'assets/Layer 7.png');
+        for (let i = 1; i <= 7; i++) {
+            this.load.image('Layer ' + i, 'assets/Layer ' + i + '.png');
+        }
         // Add more candy images as needed
     }
 
@@ -27,10 +23,15 @@ class CandyCrush extends Phaser.Scene {
             // First candy selected
             this.selectedCandy = candy;
         } else {
-            // Second candy selected, swap
+            // Second candy selected, check if they can be swapped
+            if (candy.id === this.selectedCandy.id) {
+                return; // Don't swap candies with the same ID
+            }
+
             const direction = this.getDirection(this.selectedCandy, candy);
             if (direction) {
                 this.gameBoard.swapCandy(this.selectedCandy.row, this.selectedCandy.col, direction);
+                this.checkMatches();
             }
             this.selectedCandy = null; // Reset selected candy
         }
@@ -53,6 +54,14 @@ class CandyCrush extends Phaser.Scene {
 
         return null; // Invalid direction
     }
+
+    checkMatches() {
+        const matches = this.gameBoard.findMatches();
+        if (matches.length > 0) {
+            this.gameBoard.removeMatches(matches);
+            this.gameBoard.fillEmptySpaces();
+        }
+    }
 }
 
 class Candy extends Phaser.GameObjects.Sprite {
@@ -61,6 +70,7 @@ class Candy extends Phaser.GameObjects.Sprite {
         this.type = type;
         this.row = row; // Row index of the candy
         this.col = col; // Column index of the candy
+        this.id = this.row * 10 + this.col; // Unique ID for the candy
         this.setInteractive();
         scene.add.existing(this);
         this.on('pointerdown', this.onClick, this); // Add event listener for click
@@ -94,7 +104,7 @@ class GameBoard {
                 const cellHeight = 50; // Height of each grid cell
                 const marginX = this.marginX || 5; // Default margin X (if not provided)
                 const marginY = this.marginY || 5; // Default margin Y (if not provided)
-                const x = (this.scene.sys.game.config.width - (this.numCols * (cellWidth + marginX))) / 2 + j* (cellWidth + marginX); // Center the candies horizontally with margin
+                const x = (this.scene.sys.game.config.width - (this.numCols * (cellWidth + marginX))) / 2 + j * (cellWidth + marginX); // Center the candies horizontally with margin
                 const y = (this.scene.sys.game.config.height - (this.numRows * (cellHeight + marginY))) / 2 + i * (cellHeight + marginY); // Center the candies vertically with margin
                 const candyType = Phaser.Math.Between(1, 7); // Random candy type for the cell
                 const candy = new Candy(this.scene, x, y, candyType, i, j); // Pass row and column indices
@@ -143,13 +153,92 @@ class GameBoard {
         this.grid[row1][col1] = candy2;
         this.grid[row2][col2] = candy1;
     }
+
+    findMatches() {
+        const matches = [];
+
+        // Check horizontal matches
+        for (let i = 0; i < this.numRows; i++) {
+            for (let j = 0; j < this.numCols - 2; j++) {
+                const candy1 = this.grid[i][j];
+                const candy2 = this.grid[i][j + 1];
+                const candy3 = this.grid[i][j + 2];
+                if (candy1 && candy2 && candy3 && candy1.type === candy2.type && candy2.type === candy3.type) {
+                    matches.push([candy1, candy2, candy3]);
+                }
+            }
+        }
+
+        // Check vertical matches
+        for (let j = 0; j < this.numCols; j++) {
+            for (let i = 0; i < this.numRows - 2; i++) {
+                const candy1 = this.grid[i][j];
+                const candy2 = this.grid[i + 1][j];
+                const candy3 = this.grid[i + 2][j];
+                if (candy1 && candy2 && candy3 && candy1.type === candy2.type && candy2.type === candy3.type) {
+                    matches.push([candy1, candy2, candy3]);
+                }
+            }
+        }
+
+        return matches;
+    }
+
+    removeMatches(matches) {
+        matches.forEach(match => {
+            match.forEach(candy => {
+                candy.destroy(); // Remove candy from the scene
+                this.grid[candy.row][candy.col] = null; // Remove candy from the grid
+            });
+        });
+    }
+
+    fillEmptySpaces() {
+        for (let j = 0; j < this.numCols; j++) {
+            let emptySpaces = 0;
+            for (let i = this.numRows - 1; i >= 0; i--) {
+                if (!this.grid[i][j]) {
+                    emptySpaces++;
+                } else if (emptySpaces > 0) {
+                    const candy = this.grid[i][j];
+                    candy.row += emptySpaces;
+                    this.grid[i + emptySpaces][j] = candy;
+                    this.grid[i][j] = null;
+                    candy.y += emptySpaces * (candy.height + this.marginY);
+                }
+            }
+            for (let k = 0; k < emptySpaces; k++) {
+                const x = (this.scene.sys.game.config.width - (this.numCols * (50 + this.marginX))) / 2 + j * (50 + this.marginX);
+                const y = (this.scene.sys.game.config.height - (this.numRows * (50 + this.marginY))) / 2 + k * (50 + this.marginY);
+                const candyType = Phaser.Math.Between(1, 7); // Random candy type for the cell
+                const candy = new Candy(this.scene, x, y, candyType, k, j);
+                this.grid[k][j] = candy;
+            }
+        }
+    }
+}
+
+var storage = window.localStorage;
+if (storage.candycrushlevel) {
+    var level = storage.candycrushlevel;
+} else {
+    var level = 1;
 }
 
 var config = {
     type: Phaser.AUTO,
     width: 900, // Increase game width
     height: 700, // Increase game height
-    scene: [CandyCrush]
+    scene: [CandyCrush],
+    physics: {
+        default: 'arcade',
+        arcade: {
+            gravity: { y: 0 }
+        }
+    },
+    input: {
+        gamepad: true
+    },
 };
 
 var game = new Phaser.Game(config);
