@@ -71,7 +71,6 @@ class Candy extends Phaser.GameObjects.Sprite {
     }
 }
 
-
 class GameBoard {
     constructor(scene, marginX, marginY) {
         this.scene = scene;
@@ -89,13 +88,13 @@ class GameBoard {
     createGrid() {
         for (let i = 0; i < this.numRows; i++) {
             this.grid[i] = [];
-            
+
             for (let j = 0; j < this.numCols; j++) {
                 const cellWidth = 50; // Width of each grid cell
                 const cellHeight = 50; // Height of each grid cell
                 const marginX = this.marginX || 5; // Default margin X (if not provided)
                 const marginY = this.marginY || 5; // Default margin Y (if not provided)
-                const x = (this.scene.sys.game.config.width - (this.numCols * (cellWidth + marginX))) / 2 + j * (cellWidth + marginX); // Center the candies horizontally with margin
+                const x = (this.scene.sys.game.config.width - (this.numCols * (cellWidth + marginX))) / 2 + j* (cellWidth + marginX); // Center the candies horizontally with margin
                 const y = (this.scene.sys.game.config.height - (this.numRows * (cellHeight + marginY))) / 2 + i * (cellHeight + marginY); // Center the candies vertically with margin
                 const candyType = Phaser.Math.Between(1, 7); // Random candy type for the cell
                 const candy = new Candy(this.scene, x, y, candyType, i, j); // Pass row and column indices
@@ -104,23 +103,20 @@ class GameBoard {
         }
     }
 
-    swapCandy(row, col) {
+    swapCandy(row, col, direction) {
         // Check if the clicked candy is at the edge of the grid
         if (row < 0 || row >= this.numRows || col < 0 || col >= this.numCols) {
             return;
         }
 
         // Check if the clicked candy is not at the edge of the grid
-        if (row > 0) {
+        if (direction === 'up') {
             this.swap(row, col, row - 1, col); // Swap with candy above
-        }
-        if (row < this.numRows - 1) {
+        } else if (direction === 'down') {
             this.swap(row, col, row + 1, col); // Swap with candy below
-        }
-        if (col > 0) {
+        } else if (direction === 'left') {
             this.swap(row, col, row, col - 1); // Swap with candy on the left
-        }
-        if (col < this.numCols - 1) {
+        } else if (direction === 'right') {
             this.swap(row, col, row, col + 1); // Swap with candy on the right
         }
     }
@@ -148,7 +144,6 @@ class GameBoard {
         this.grid[row2][col2] = candy1;
     }
 }
-
 
 var config = {
     type: Phaser.AUTO,
