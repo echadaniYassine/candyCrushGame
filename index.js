@@ -2,6 +2,12 @@ class CandyCrush extends Phaser.Scene {
     constructor() {
         super({ key: 'CandyCrush' });
         this.selectedCandy = null; // Track the currently selected candy
+        this.score = 0; // Initialize score
+        this.level = 1; // Initialize level
+        this.moves = 30; // Initialize moves
+        this.timer = 60; // Initialize timer (in seconds)
+        this.timerText = null; // Timer text object
+        this.gameOver = false; // Game over flag
     }
 
     preload() {
@@ -9,22 +15,37 @@ class CandyCrush extends Phaser.Scene {
         for (let i = 1; i <= 7; i++) {
             this.load.image('Layer ' + i, 'assets/Layer ' + i + '.png');
         }
-        // Add more candy images as needed
     }
 
     create() {
         // Create game board
         this.gameBoard = new GameBoard(this, 30, 30); // Add margin parameters
         this.gameBoard.init();
+
+        // Display score
+        this.scoreText = this.add.text(20, 20, 'Score: 0', { fontFamily: 'Arial', fontSize: 24, color: '#ffffff' });
+
+        // Display level
+        this.levelText = this.add.text(20, 50, 'Level: 1', { fontFamily: 'Arial', fontSize: 24, color: '#ffffff' });
+
+        // Display moves
+        this.movesText = this.add.text(20, 80, 'Moves: 30', { fontFamily: 'Arial', fontSize: 24, color: '#ffffff' });
+
+        // Display timer
+        this.timerText = this.add.text(700, 20, 'Time: 60', { fontFamily: 'Arial', fontSize: 24, color: '#ffffff' });
+        this.timerEvent = this.time.addEvent({ delay: 1000, callback: this.updateTimer, callbackScope: this, loop: true });
     }
 
     selectCandy(candy) {
+        if (this.gameOver) return;
+
         if (!this.selectedCandy) {
             // First candy selected
             this.selectedCandy = candy;
         } else {
             // Second candy selected, check if they can be swapped
             if (candy.id === this.selectedCandy.id) {
+                this.clearSelection();
                 return; // Don't swap candies with the same ID
             }
 
@@ -32,9 +53,19 @@ class CandyCrush extends Phaser.Scene {
             if (direction) {
                 this.gameBoard.swapCandy(this.selectedCandy.row, this.selectedCandy.col, direction);
                 this.checkMatches();
+                this.moves--;
+                this.movesText.setText('Moves: ' + this.moves);
+                if (this.moves === 0) {
+                    this.gameOver = true;
+                    this.showGameOver();
+                }
             }
-            this.selectedCandy = null; // Reset selected candy
+            this.clearSelection();
         }
+    }
+
+    clearSelection() {
+        this.selectedCandy = null; // Reset selected candy
     }
 
     getDirection(candy1, candy2) {
@@ -59,8 +90,36 @@ class CandyCrush extends Phaser.Scene {
         const matches = this.gameBoard.findMatches();
         if (matches.length > 0) {
             this.gameBoard.removeMatches(matches);
-            this.gameBoard.fillEmptySpaces();
+            this.score += matches.length * 10; // Increase score based on number of matches
+            this.scoreText.setText('Score: ' + this.score);
+            this.levelUp();
         }
+    }
+
+    levelUp() {
+        if (this.score >= this.level * 100) {
+            this.level++;
+            this.levelText.setText('Level: ' + this.level);
+            this.moves += 5; // Increase moves
+            this.movesText.setText('Moves: ' + this.moves);
+        }
+    }
+
+    updateTimer() {
+        if (!this.gameOver) {
+            this.timer--;
+            this.timerText.setText('Time: ' + this.timer);
+            if (this.timer === 0) {
+                this.gameOver = true;
+                this.showGameOver();
+            }
+        }
+    }
+
+    showGameOver() {
+        // Display game over message
+        const gameOverText = this.add.text(this.cameras.main.centerX, this.cameras.main.centerY, 'Game Over', { fontFamily: 'Arial', fontSize: 64, color: '#ffffff' });
+        gameOverText.setOrigin(0.5);
     }
 }
 
@@ -191,6 +250,9 @@ class GameBoard {
                 this.grid[candy.row][candy.col] = null; // Remove candy from the grid
             });
         });
+
+        // Trigger cascading effect
+        this.fillEmptySpaces();
     }
 
     fillEmptySpaces() {
@@ -204,7 +266,6 @@ class GameBoard {
                     candy.row += emptySpaces;
                     this.grid[i + emptySpaces][j] = candy;
                     this.grid[i][j] = null;
-                    candy.y += emptySpaces * (candy.height + this.marginY);
                 }
             }
             for (let k = 0; k < emptySpaces; k++) {
@@ -216,13 +277,6 @@ class GameBoard {
             }
         }
     }
-}
-
-var storage = window.localStorage;
-if (storage.candycrushlevel) {
-    var level = storage.candycrushlevel;
-} else {
-    var level = 1;
 }
 
 var config = {
