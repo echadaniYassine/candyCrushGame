@@ -8,6 +8,7 @@ class CandyCrush extends Phaser.Scene {
         this.timer = 60; // Initialize timer (in seconds)
         this.timerText = null; // Timer text object
         this.gameOver = false; // Game over flag
+        this.swapSound = null; // Sound for candy swap
     }
 
     preload() {
@@ -15,6 +16,9 @@ class CandyCrush extends Phaser.Scene {
         for (let i = 1; i <= 7; i++) {
             this.load.image('Layer ' + i, 'assets/Layer ' + i + '.png');
         }
+
+        // Load swap sound
+        this.load.audio('swapSound', 'assets/swap_sound.mp3');
     }
 
     create() {
@@ -34,6 +38,9 @@ class CandyCrush extends Phaser.Scene {
         // Display timer
         this.timerText = this.add.text(700, 20, 'Time: 60', { fontFamily: 'Arial', fontSize: 24, color: '#ffffff' });
         this.timerEvent = this.time.addEvent({ delay: 1000, callback: this.updateTimer, callbackScope: this, loop: true });
+
+        // Load swap sound
+        this.swapSound = this.sound.add('swapSound');
     }
 
     selectCandy(candy) {
@@ -159,17 +166,37 @@ class GameBoard {
             this.grid[i] = [];
 
             for (let j = 0; j < this.numCols; j++) {
-                const cellWidth = 50; // Width of each grid cell
+                const cellWidth = 30; // Width of each grid cell
                 const cellHeight = 50; // Height of each grid cell
                 const marginX = this.marginX || 5; // Default margin X (if not provided)
                 const marginY = this.marginY || 5; // Default margin Y (if not provided)
                 const x = (this.scene.sys.game.config.width - (this.numCols * (cellWidth + marginX))) / 2 + j * (cellWidth + marginX); // Center the candies horizontally with margin
                 const y = (this.scene.sys.game.config.height - (this.numRows * (cellHeight + marginY))) / 2 + i * (cellHeight + marginY); // Center the candies vertically with margin
-                const candyType = Phaser.Math.Between(1, 7); // Random candy type for the cell
+                let candyType = Phaser.Math.Between(1, 7); // Random candy type for the cell
+
+                // Check for matches after placing each candy
+                while (this.checkMatchAtPosition(i, j, candyType)) {
+                    candyType = Phaser.Math.Between(1, 7); // Generate a new candy type if the current one forms a match
+                }
+
                 const candy = new Candy(this.scene, x, y, candyType, i, j); // Pass row and column indices
                 this.grid[i][j] = candy;
             }
         }
+    }
+
+    checkMatchAtPosition(row, col, type) {
+        // Check horizontal matches
+        if (col > 1 && this.grid[row][col - 1].type === type && this.grid[row][col - 2].type === type) {
+            return true;
+        }
+
+        // Check vertical matches
+        if (row > 1 && this.grid[row - 1][col].type === type && this.grid[row - 2][col].type === type) {
+            return true;
+        }
+
+        return false;
     }
 
     swapCandy(row, col, direction) {
@@ -193,25 +220,49 @@ class GameBoard {
     swap(row1, col1, row2, col2) {
         const candy1 = this.grid[row1][col1];
         const candy2 = this.grid[row2][col2];
-
-        // Swap candy positions
-        const tempX = candy1.x;
-        const tempY = candy1.y;
-        candy1.x = candy2.x;
-        candy1.y = candy2.y;
-        candy2.x = tempX;
-        candy2.y = tempY;
-
-        // Swap row and column indices
-        candy1.row = row2;
-        candy1.col = col2;
-        candy2.row = row1;
-        candy2.col = col1;
-
-        // Update grid array
-        this.grid[row1][col1] = candy2;
-        this.grid[row2][col2] = candy1;
+    
+        // Check if both candies are valid
+        if (!candy1 || !candy2 || candy1.isAnimating || candy2.isAnimating) {
+            return; // Exit early if any candy is invalid or animating
+        }
+    
+        // Calculate target positions for candies
+        const targetX1 = candy2.x;
+        const targetY1 = candy2.y;
+        const targetX2 = candy1.x;
+        const targetY2 = candy1.y;
+    
+        // Move candies to target positions
+        this.scene.tweens.add({
+            targets: candy1,
+            x: targetX1,
+            y: targetY1,
+            duration: 200,
+            ease: 'Linear'
+        });
+    
+        this.scene.tweens.add({
+            targets: candy2,
+            x: targetX2,
+            y: targetY2,
+            duration: 200,
+            ease: 'Linear',
+            onComplete: () => {
+                // Swap row and column indices after animation is complete
+                const tempRow = candy1.row;
+                const tempCol = candy1.col;
+                candy1.row = candy2.row;
+                candy1.col = candy2.col;
+                candy2.row = tempRow;
+                candy2.col = tempCol;
+    
+                // Update grid array
+                this.grid[candy1.row][candy1.col] = candy1;
+                this.grid[candy2.row][candy2.col] = candy2;
+            }
+        });
     }
+    
 
     findMatches() {
         const matches = [];
@@ -246,14 +297,25 @@ class GameBoard {
     removeMatches(matches) {
         matches.forEach(match => {
             match.forEach(candy => {
-                candy.destroy(); // Remove candy from the scene
-                this.grid[candy.row][candy.col] = null; // Remove candy from the grid
+                // Animation to scale down and fade out the candy
+                this.scene.tweens.add({
+                    targets: candy,
+                    scaleX: 0,
+                    scaleY: 0,
+                    alpha: 0,
+                    duration: 500,
+                    onComplete: () => {
+                        candy.destroy(); // Remove candy from the scene after animation
+                        this.grid[candy.row][candy.col] = null; // Remove candy from the grid
+                    }
+                });
             });
         });
-
+    
         // Trigger cascading effect
         this.fillEmptySpaces();
     }
+    
 
     fillEmptySpaces() {
         for (let j = 0; j < this.numCols; j++) {
@@ -269,11 +331,13 @@ class GameBoard {
                 }
             }
             for (let k = 0; k < emptySpaces; k++) {
-                const x = (this.scene.sys.game.config.width - (this.numCols * (50 + this.marginX))) / 2 + j * (50 + this.marginX);
-                const y = (this.scene.sys.game.config.height - (this.numRows * (50 + this.marginY))) / 2 + k * (50 + this.marginY);
-                const candyType = Phaser.Math.Between(1, 7); // Random candy type for the cell
-                const candy = new Candy(this.scene, x, y, candyType, k, j);
-                this.grid[k][j] = candy;
+                const cellWidth = 900 / this.numCols;
+                const cellHeight = 700 / this.numRows;
+                const x = (this.scene.sys.game.config.width - (this.numCols * cellWidth)) / 2 + j * (cellWidth + this.marginX);
+                const y = (this.scene.sys.game.config.height - (this.numRows * cellHeight)) / 2 + k * (cellHeight + this.marginY);
+                //const candyType = Phaser.Math.Between(1, 7); // Random candy type for the cell
+                //const candy = new Candy(this.scene, x, y, candyType, k, j);
+                //this.grid[k][j] = candy;
             }
         }
     }
@@ -296,3 +360,11 @@ var config = {
 };
 
 var game = new Phaser.Game(config);
+
+
+
+
+
+//const candyType = Phaser.Math.Between(1, 7); // Random candy type for the cell
+//const candy = new Candy(this.scene, x, y, candyType, k, j);
+//this.grid[k][j] = candy;
