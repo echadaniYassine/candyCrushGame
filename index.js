@@ -18,7 +18,7 @@ class CandyCrush extends Phaser.Scene {
         }
 
         // Load swap sound
-        this.load.audio('swapSound', 'assets/swap_sound.mp3');
+        this.load.audio('swapSound', 'assets/CandyCrush.mp3');
     }
 
     create() {
@@ -232,7 +232,8 @@ class GameBoard {
         const targetX2 = candy1.x;
         const targetY2 = candy1.y;
     
-        // Move candies to target positions
+        // Move candies to target positions with sound
+        this.scene.sound.play('swapSound'); // Play swap sound
         this.scene.tweens.add({
             targets: candy1,
             x: targetX1,
@@ -262,6 +263,7 @@ class GameBoard {
             }
         });
     }
+    
     
 
     findMatches() {
@@ -365,6 +367,3 @@ var game = new Phaser.Game(config);
 
 
 
-//const candyType = Phaser.Math.Between(1, 7); // Random candy type for the cell
-//const candy = new Candy(this.scene, x, y, candyType, k, j);
-//this.grid[k][j] = candy;
