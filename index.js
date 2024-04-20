@@ -1,3 +1,81 @@
+class StartScene extends Phaser.Scene {
+    constructor() {
+        super({ key: 'StartScene' });
+    }
+
+    preload() {
+        // Load assets needed for your game (e.g., images, audio)
+        this.load.image('background', 'assets/background.jpg');
+        this.load.image('buttonBg', 'assets/background.jpg'); // Load button background image
+    }
+
+    create() {
+        // Add background image or any other visual elements for the start page
+        this.add.image(this.cameras.main.centerX, this.cameras.main.centerY, 'background');
+
+        // Add a background for the start button
+        var buttonBg = this.add.image(this.cameras.main.centerX, this.cameras.main.centerY, 'buttonBg');
+        buttonBg.setOrigin(0.5);
+
+        // Add a start button
+        var startButton = this.add.text(this.cameras.main.centerX, this.cameras.main.centerY, 'Start Game', { fontFamily: 'Arial', fontSize: 24, color: '#ffffff' });
+        startButton.setOrigin(0.5);
+        startButton.setInteractive();
+
+        // Define the pointerdown event for the start button
+        startButton.on('pointerdown', () => {
+            // Transition to the loading scene when the button is clicked
+            this.scene.start('PreloadScene');
+        });
+
+        // Animate the button background
+        this.tweens.add({
+            targets: buttonBg,
+            scaleX: 1.1,
+            scaleY: 1.1,
+            duration: 1000,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+    }
+}
+
+class PreloadScene extends Phaser.Scene {
+    constructor() {
+        super({ key: 'PreloadScene' });
+    }
+
+    preload() {
+        // Load assets needed for your game (e.g., images, audio)
+        this.load.image('background', 'assets/background.jpg');
+        // Add more asset loading here as needed
+    }
+
+    create() {
+        // Display "Game Loading..." text
+        var loadingText = this.add.text(this.cameras.main.centerX, this.cameras.main.centerY, 'Game Loading...', { fontFamily: 'Arial', fontSize: 24, color: '#ffffff' });
+        loadingText.setOrigin(0.5);
+
+        // Animate the text to scale up and down repeatedly
+        this.tweens.add({
+            targets: loadingText,
+            scaleX: 1.2,
+            scaleY: 1.2,
+            duration: 1000,
+            ease: 'Sine.easeInOut',
+            yoyo: true,
+            repeat: -1 // Repeat indefinitely
+        });
+
+        // Wait for 5 seconds before starting the game (adjust as needed)
+        setTimeout(() => {
+            // Transition to the main game scene
+            this.scene.start('CandyCrush');
+        }, 5000);
+    }
+}
+
 class CandyCrush extends Phaser.Scene {
     constructor() {
         super({ key: 'CandyCrush' });
@@ -8,7 +86,6 @@ class CandyCrush extends Phaser.Scene {
         this.timer = 6; // Initialize timer (in seconds)
         this.timerText = null; // Timer text object
         this.gameOver = false; // Game over flag
-        this.swapSound = null; // Sound for candy swap
     }
 
     preload() {
@@ -16,14 +93,13 @@ class CandyCrush extends Phaser.Scene {
         for (let i = 1; i <= 7; i++) {
             this.load.image('Layer ' + i, 'assets/Layer ' + i + '.png');
         }
-
-        // Load swap sound
         this.load.audio('swapSound', 'assets/CandyCrush.mp3');
+
     }
 
     create() {
         // Create game board
-        this.gameBoard = new GameBoard(this, 30, 30); // Add margin parameters
+        this.gameBoard = new GameBoard(this, 30,30); // Add margin parameters
         this.gameBoard.init();
 
         // Display score
@@ -36,11 +112,11 @@ class CandyCrush extends Phaser.Scene {
         this.movesText = this.add.text(20, 80, 'Moves: 30', { fontFamily: 'Arial', fontSize: 24, color: '#ffffff' });
 
         // Display timer
-        this.timerText = this.add.text(700, 20, 'Time: 6', { fontFamily: 'Arial', fontSize: 24, color: '#ffffff' });
+        this.timerText = this.add.text(700, 20, 'Time: 60', { fontFamily: 'Arial', fontSize: 24, color: '#ffffff' });
         this.timerEvent = this.time.addEvent({ delay: 1000, callback: this.updateTimer, callbackScope: this, loop: true });
 
-        // Load swap sound
         this.swapSound = this.sound.add('swapSound');
+
     }
 
     selectCandy(candy) {
@@ -125,9 +201,14 @@ class CandyCrush extends Phaser.Scene {
 
     showGameOver() {
         // Display game over message
-        const gameOverText = this.add.text(this.cameras.main.centerX, this.cameras.main.centerY, 'Game Over', { fontFamily: 'Arial', fontSize: 64, color: '#ffffff' });
+        const gameOverText = this.add.text(this.cameras.main.centerX, this.cameras.main.centerY - 50, 'Game Over', { fontFamily: 'Arial', fontSize: 64, color: '#ffffff' });
         gameOverText.setOrigin(0.5);
+    
+        // Display ranking message
+        const rankingText = this.add.text(this.cameras.main.centerX, this.cameras.main.centerY + 50, 'Your Score: ' + this.score, { fontFamily: 'Arial', fontSize: 32, color: '#ffffff' });
+        rankingText.setOrigin(0.5);
     }
+    
 }
 
 class Candy extends Phaser.GameObjects.Sprite {
@@ -171,8 +252,8 @@ class GameBoard {
                 const marginX = this.marginX || 5; // Default margin X (if not provided)
                 const marginY = this.marginY || 5; // Default margin Y (if not provided)
                 const x = (this.scene.sys.game.config.width - (this.numCols * (cellWidth + marginX))) / 2 + j * (cellWidth + marginX); // Center the candies horizontally with margin
-                const startY = -100; // Start Y position above the screen
-                const y = (this.scene.sys.game.config.height - (this.numRows * (cellHeight + marginY))) / 2 + i * (cellHeight + marginY); // Center the candies vertically with margin
+                const startY = -cellHeight * (this.numRows - i); // Start candies above the grid
+    
                 let candyType = Phaser.Math.Between(1, 7); // Random candy type for the cell
     
                 // Check for matches after placing each candy
@@ -180,20 +261,26 @@ class GameBoard {
                     candyType = Phaser.Math.Between(1, 7); // Generate a new candy type if the current one forms a match
                 }
     
-                const candy = new Candy(this.scene, x, startY, candyType, i, j); // Pass row and column indices, start Y above the screen
-                this.grid[i][j] = candy;
+                // Create candies with initial position above the grid
+                const candy = new Candy(this.scene, x, startY, candyType, i, j);
+                candy.setScale(0);
     
-                // Animation to move candy to its final position
+                // Animate candies to fall into position with a bounce effect
                 this.scene.tweens.add({
                     targets: candy,
-                    y: y,
-                    duration: 500,
-                    ease: 'Bounce',
-                    delay: i * 100 + j * 100 // Delay each candy's animation slightly for a cascading effect
+                    y: (this.scene.sys.game.config.height - (this.numRows * (cellHeight + marginY))) / 2 + i * (cellHeight + marginY),
+                    scaleX: 1,
+                    scaleY: 1,
+                    duration: 800,
+                    delay: i * 50 + j * 50, // Add delay based on position for staggered effect
+                    ease: 'Bounce.Out', // Use bounce out effect for animation
                 });
+    
+                this.grid[i][j] = candy;
             }
         }
     }
+    
     
 
     checkMatchAtPosition(row, col, type) {
@@ -226,55 +313,48 @@ class GameBoard {
         } else if (direction === 'right') {
             this.swap(row, col, row, col + 1); // Swap with candy on the right
         }
+        
     }
 
     swap(row1, col1, row2, col2) {
         const candy1 = this.grid[row1][col1];
         const candy2 = this.grid[row2][col2];
+
+        this.scene.swapSound.play();
+
     
-        // Check if both candies are valid
-        if (!candy1 || !candy2 || candy1.isAnimating || candy2.isAnimating) {
-            return; // Exit early if any candy is invalid or animating
-        }
-    
-        // Calculate target positions for candies
-        const targetX1 = candy2.x;
-        const targetY1 = candy2.y;
-        const targetX2 = candy1.x;
-        const targetY2 = candy1.y;
-    
-        // Move candies to target positions with sound
-        this.scene.sound.play('swapSound'); // Play swap sound
+        // Animate candy1 to move to candy2's position
         this.scene.tweens.add({
             targets: candy1,
-            x: targetX1,
-            y: targetY1,
+            x: candy2.x,
+            y: candy2.y,
             duration: 200,
-            ease: 'Linear'
+            ease: 'Linear',
         });
     
+        // Animate candy2 to move to candy1's position
         this.scene.tweens.add({
             targets: candy2,
-            x: targetX2,
-            y: targetY2,
+            x: candy1.x,
+            y: candy1.y,
             duration: 200,
             ease: 'Linear',
             onComplete: () => {
-                // Swap row and column indices after animation is complete
-                const tempRow = candy1.row;
-                const tempCol = candy1.col;
-                candy1.row = candy2.row;
-                candy1.col = candy2.col;
-                candy2.row = tempRow;
-                candy2.col = tempCol;
+                // Swap row and column indices after animation completes
+                candy1.row = row2;
+                candy1.col = col2;
+                candy2.row = row1;
+                candy2.col = col1;
     
-                // Update grid array
-                this.grid[candy1.row][candy1.col] = candy1;
-                this.grid[candy2.row][candy2.col] = candy2;
+                // Update grid array after animation completes
+                this.grid[row1][col1] = candy2;
+                this.grid[row2][col2] = candy1;
+    
+                // Check for matches after candies are swapped
+                this.scene.checkMatches();
             }
         });
     }
-    
     
 
     findMatches() {
@@ -310,13 +390,13 @@ class GameBoard {
     removeMatches(matches) {
         matches.forEach(match => {
             match.forEach(candy => {
-                // Animation to scale down and fade out the candy
+                // Animate candy to scale down and fade out
                 this.scene.tweens.add({
                     targets: candy,
                     scaleX: 0,
                     scaleY: 0,
                     alpha: 0,
-                    duration: 500,
+                    duration: 200,
                     onComplete: () => {
                         candy.destroy(); // Remove candy from the scene after animation
                         this.grid[candy.row][candy.col] = null; // Remove candy from the grid
@@ -328,6 +408,7 @@ class GameBoard {
         // Trigger cascading effect
         this.fillEmptySpaces();
     }
+    
     
 
     fillEmptySpaces() {
@@ -360,7 +441,9 @@ var config = {
     type: Phaser.AUTO,
     width: 900, // Increase game width
     height: 700, // Increase game height
+    //scene: [StartScene,PreloadScene,CandyCrush],
     scene: [CandyCrush],
+
     physics: {
         default: 'arcade',
         arcade: {
@@ -370,11 +453,8 @@ var config = {
     input: {
         gamepad: true
     },
+    backgroundColor: '#4C0099', // Set the background color here
+
 };
 
 var game = new Phaser.Game(config);
-
-
-
-
-
