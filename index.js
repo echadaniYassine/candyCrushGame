@@ -1,12 +1,14 @@
 class StartScene extends Phaser.Scene {
     constructor() {
         super({ key: 'StartScene' });
+        this.candyAudio = null; // Reference to the candy audio object
     }
 
     preload() {
         // Load assets needed for your game (e.g., images, audio)
         this.load.image('background', 'assets/background.jpg');
         this.load.image('buttonBg', 'assets/background.jpg'); // Load button background image
+        this.load.audio("candyAudio", 'assets/CandyCrushSagaOPN.mp3');
     }
 
     create() {
@@ -24,6 +26,10 @@ class StartScene extends Phaser.Scene {
 
         // Define the pointerdown event for the start button
         startButton.on('pointerdown', () => {
+            // Stop the candy audio when transitioning to the loading scene
+            if (this.candyAudio) {
+                this.candyAudio.destroy();
+            }
             // Transition to the loading scene when the button is clicked
             this.scene.start('PreloadScene');
         });
@@ -38,8 +44,14 @@ class StartScene extends Phaser.Scene {
             repeat: -1,
             ease: 'Sine.easeInOut'
         });
+
+        // Play audio
+        this.candyAudio = this.sound.add('candyAudio');
+        this.candyAudio.play();
     }
 }
+
+
 
 class PreloadScene extends Phaser.Scene {
     constructor() {
@@ -50,6 +62,8 @@ class PreloadScene extends Phaser.Scene {
         // Load assets needed for your game (e.g., images, audio)
         this.load.image('background', 'assets/background.jpg');
         // Add more asset loading here as needed
+        this.load.audio("candyAudio1", 'assets/CandyCrushSagaOST.mp3');
+
     }
 
     create() {
@@ -68,11 +82,18 @@ class PreloadScene extends Phaser.Scene {
             repeat: -1 // Repeat indefinitely
         });
 
+        // Play audio
+        this.candyAudio = this.sound.add('candyAudio1');
+        this.candyAudio.play();
+
         // Wait for 5 seconds before starting the game (adjust as needed)
         setTimeout(() => {
+            this.candyAudio.stop();
             // Transition to the main game scene
             this.scene.start('CandyCrush');
         }, 5000);
+
+
     }
 }
 
@@ -82,8 +103,8 @@ class CandyCrush extends Phaser.Scene {
         this.selectedCandy = null; // Track the currently selected candy
         this.score = 0; // Initialize score
         this.level = 1; // Initialize level
-        this.moves = 30; // Initialize moves
-        this.timer = 6; // Initialize timer (in seconds)
+        this.moves = 10; // Initialize moves
+        this.timer = null; // Initialize timer (in seconds)
         this.timerText = null; // Timer text object
         this.gameOver = false; // Game over flag
     }
@@ -94,6 +115,12 @@ class CandyCrush extends Phaser.Scene {
             this.load.image('Layer ' + i, 'assets/Layer ' + i + '.png');
         }
         this.load.audio('swapSound', 'assets/CandyCrush.mp3');
+
+        this.load.audio('bacjground2', 'assets/CandyCrushSagaGame.mp3');
+
+
+        this.load.image('background1', 'assets/background.jpg');
+
 
     }
 
@@ -116,6 +143,19 @@ class CandyCrush extends Phaser.Scene {
         this.timerEvent = this.time.addEvent({ delay: 1000, callback: this.updateTimer, callbackScope: this, loop: true });
 
         this.swapSound = this.sound.add('swapSound');
+
+        const replayButton = this.add.text(900/2, 600, 'Replay', { fontFamily: 'Arial', fontSize: 24, color: '#ffffff' });
+        replayButton.setOrigin(1, 0);
+        replayButton.setInteractive();
+
+        // Define the pointerdown event for the replay button
+        replayButton.on('pointerdown', () => {
+            // Restart the game
+            this.scene.restart();
+        });
+        // Play audio
+        this.candyAudio2 = this.sound.add('bacjground2');
+        this.candyAudio2.play();
 
     }
 
@@ -192,14 +232,19 @@ class CandyCrush extends Phaser.Scene {
         if (!this.gameOver) {
             this.timer--;
             this.timerText.setText('Time: ' + this.timer);
-            if (this.timer === 0) {
+            if (this.timer === 0 || this.moves === 0) {
                 this.gameOver = true;
                 this.showGameOver();
             }
         }
     }
+    
 
     showGameOver() {
+        // Add background image
+        const backgroundImage = this.add.image(this.cameras.main.centerX, this.cameras.main.centerY, 'background1');
+        backgroundImage.setOrigin(0.5);
+    
         // Display game over message
         const gameOverText = this.add.text(this.cameras.main.centerX, this.cameras.main.centerY - 50, 'Game Over', { fontFamily: 'Arial', fontSize: 64, color: '#ffffff' });
         gameOverText.setOrigin(0.5);
@@ -207,7 +252,18 @@ class CandyCrush extends Phaser.Scene {
         // Display ranking message
         const rankingText = this.add.text(this.cameras.main.centerX, this.cameras.main.centerY + 50, 'Your Score: ' + this.score, { fontFamily: 'Arial', fontSize: 32, color: '#ffffff' });
         rankingText.setOrigin(0.5);
+
+        const replayButton = this.add.text(900/2, 600, 'Replay', { fontFamily: 'Arial', fontSize: 24, color: '#ffffff' });
+        replayButton.setOrigin(1, 0);
+        replayButton.setInteractive();
+
+        // Define the pointerdown event for the replay button
+        replayButton.on('pointerdown', () => {
+            // Restart the game
+            this.scene.restart();
+        });
     }
+    
     
 }
 
@@ -442,8 +498,7 @@ var config = {
     width: 900, // Increase game width
     height: 700, // Increase game height
     //scene: [StartScene,PreloadScene,CandyCrush],
-    scene: [CandyCrush],
-
+    scene: [StartScene,PreloadScene,CandyCrush],
     physics: {
         default: 'arcade',
         arcade: {
