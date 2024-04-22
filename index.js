@@ -2,6 +2,7 @@ import { PreloadScene } from './PreloadScene.js';
 import { StartScene } from './StartScene.js';
 import { CandyCrush } from './CandyCrush.js';
 
+
 var config = {
     type: Phaser.AUTO,
     width: 900, // Increase game width

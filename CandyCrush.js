@@ -6,7 +6,7 @@ export class CandyCrush extends Phaser.Scene {
         this.score = 0; // Initialize score
         this.level = 1; // Initialize level
         this.moves = 10; // Initialize moves
-        this.timer = null; // Initialize timer (in seconds)
+        this.timer = 60; // Initialize timer (in seconds)
         this.timerText = null; // Timer text object
         this.gameOver = false; // Game over flag
     }
@@ -18,7 +18,7 @@ export class CandyCrush extends Phaser.Scene {
         }
         this.load.audio('swapSound', 'assets/CandyCrush.mp3');
 
-        this.load.audio('bacjground2', 'assets/CandyCrushSagaGame.mp3');
+        this.load.audio('background2', 'assets/CandyCrushSagaGame.mp3');
 
 
         this.load.image('background1', 'assets/background.jpg');
@@ -27,43 +27,118 @@ export class CandyCrush extends Phaser.Scene {
     }
 
     create() {
+        // Add background image
+        const backgroundImage = this.add.image(this.cameras.main.centerX, this.cameras.main.centerY, 'background1');
+        backgroundImage.setScale(this.sys.game.config.width / backgroundImage.width, this.sys.game.config.height / backgroundImage.height);
+
         // Create game board
         this.gameBoard = new GameBoard(this, 30, 30); // Add margin parameters
         this.gameBoard.init();
-    
+
         // Display score
         this.scoreText = this.add.text(20, 20, 'Score: 0', { fontFamily: 'Arial', fontSize: 24, color: '#ffffff' });
-    
+
         // Display level
         this.levelText = this.add.text(20, 50, 'Level: 1', { fontFamily: 'Arial', fontSize: 24, color: '#ffffff' });
-    
+
         // Display moves
         this.movesText = this.add.text(20, 80, 'Moves: 30', { fontFamily: 'Arial', fontSize: 24, color: '#ffffff' });
-    
+
         // Display timer
-        this.timerText = this.add.text(700, 20, 'Time: 60', { fontFamily: 'Arial', fontSize: 24, color: '#ffffff' });
+        this.timerText = this.add.text(400, 20, 'Time: 60', { fontFamily: 'Arial', fontSize: 24, color: '#ffffff' });
         this.timerEvent = this.time.addEvent({ delay: 1000, callback: this.updateTimer, callbackScope: this, loop: true });
-    
+
         this.swapSound = this.sound.add('swapSound');
-    
-        const replayButton = this.add.text(900 / 2, 600, 'Replay', { fontFamily: 'Arial', fontSize: 24, color: '#ffffff' });
-        replayButton.setOrigin(1, 0);
-        replayButton.setInteractive();
-    
+
+        const GenerateButton = this.add.text(530, 600, 'Generate New ', { fontFamily: 'Arial', fontSize: 24, color: '#ffffff' });
+        GenerateButton.setOrigin(1, 0);
+        GenerateButton.setInteractive();
+
         // Define the pointerdown event for the replay button
-        replayButton.on('pointerdown', () => {
+        GenerateButton.on('pointerdown', () => {
             // Stop the current background music
-            this.candyAudio2.stop();
-            
+            this.candyAudio.stop();
+
             // Restart the game
-            this.scene.restart();
+            this.scene.restart('CandyCrush');
         });
-        
+
+
+
+        // Add settings button
+        const settingsButton = this.add.text(800, 30, 'Settings', { fontFamily: 'Arial', fontSize: 24, color: '#ffffff' });
+        settingsButton.setOrigin(0.5);
+        settingsButton.setScale(1);
+        settingsButton.setInteractive();
+
+        // Define the pointerdown event for the settings button
+        settingsButton.on('pointerdown', () => {
+            if (!this.settingsMenu) {
+                this.showSettingsMenu();
+            } else {
+                this.destroySettingsMenu();
+            }
+        });
+
         // Play audio
-        this.candyAudio2 = this.sound.add('bacjground2');
-        this.candyAudio2.play();
+        this.candyAudio = this.sound.add('background2', { loop: true }); // Set loop to true
+        this.candyAudio.play();
     }
-    
+    showSettingsMenu() {
+        // Destroy the existing settings menu if it exists
+        this.destroySettingsMenu();
+
+        // Create a settings menu group
+        this.settingsMenu = this.add.group();
+
+        // Add background for settings menu
+        const settingsBg = this.add.rectangle(this.cameras.main.centerX, this.cameras.main.centerY, 300, 200, 0x000000, 0.8);
+        settingsBg.setOrigin(0.5);
+        this.settingsMenu.add(settingsBg);
+
+        // Add sound on button
+        const soundOnButton = this.add.text(this.cameras.main.centerX - 50, this.cameras.main.centerY - 30, 'Sound On', { fontFamily: 'Arial', fontSize: 18, color: '#ffffff' });
+        soundOnButton.setOrigin(0.5);
+        soundOnButton.setInteractive();
+        this.settingsMenu.add(soundOnButton);
+
+        // Add sound off button
+        const soundOffButton = this.add.text(this.cameras.main.centerX + 50, this.cameras.main.centerY - 30, 'Sound Off', { fontFamily: 'Arial', fontSize: 18, color: '#ffffff' });
+        soundOffButton.setOrigin(0.5);
+        soundOffButton.setInteractive();
+        this.settingsMenu.add(soundOffButton);
+
+        // Define the pointerdown event for the sound on button
+        soundOnButton.on('pointerdown', () => {
+            this.soundEnabled = true;
+            this.candyAudio.play();
+            soundOnButton.setAlpha(1);
+            soundOffButton.setAlpha(0.5);
+            // Destroy the settings menu
+            // this.destroySettingsMenu(); // Temporarily commented out
+        });
+
+        // Define the pointerdown event for the sound off button
+        soundOffButton.on('pointerdown', () => {
+            this.soundEnabled = false;
+            this.candyAudio.stop();
+            soundOnButton.setAlpha(0.5);
+            soundOffButton.setAlpha(1);
+            // Destroy the settings menu
+            // this.destroySettingsMenu(); // Temporarily commented out
+        });
+    }
+
+    destroySettingsMenu() {
+        // Destroy the settings menu
+        if (this.settingsMenu) {
+            this.settingsMenu.destroy(true);
+            this.settingsMenu = null;
+        }
+    }
+
+
+
 
     selectCandy(candy) {
         if (this.gameOver) return;
@@ -148,38 +223,38 @@ export class CandyCrush extends Phaser.Scene {
 
     showGameOver() {
         // Stop the background music
-        this.candyAudio2.stop();
-    
+        this.candyAudio.stop();
+
         // Add background image
         const backgroundImage = this.add.image(this.cameras.main.centerX, this.cameras.main.centerY, 'background1');
         backgroundImage.setOrigin(0.5);
-    
+
         // Display game over message
         const gameOverText = this.add.text(this.cameras.main.centerX, this.cameras.main.centerY - 50, 'Game Over', { fontFamily: 'Arial', fontSize: 64, color: '#ffffff' });
         gameOverText.setOrigin(0.5);
-    
+
         // Display ranking message
         const rankingText = this.add.text(this.cameras.main.centerX, this.cameras.main.centerY + 50, 'Your Score: ' + this.score, { fontFamily: 'Arial', fontSize: 32, color: '#ffffff' });
         rankingText.setOrigin(0.5);
-    
+
         const replayButton = this.add.text(900 / 2, 600, 'Replay', { fontFamily: 'Arial', fontSize: 24, color: '#ffffff' });
         replayButton.setOrigin(1, 0);
         replayButton.setInteractive();
-    
+
         // Define the pointerdown event for the replay button
         replayButton.on('pointerdown', () => {
             // Stop the background music before restarting
-            this.candyAudio2.stop();
-            
+            this.candyAudio.stop();
+
             // Restart the game
-            this.scene.restart();
-    
+            this.scene.restart('CandyCrush');
+
             // Play the background music again
-            this.candyAudio2.play();
+            this.candyAudio.play();
         });
     }
-    
-    
+
+
 
 
 
@@ -295,7 +370,7 @@ class GameBoard {
         const candy1 = this.grid[row1][col1];
         const candy2 = this.grid[row2][col2];
 
-        this.scene.swapSound.play();
+
 
 
         // Animate candy1 to move to candy2's position
@@ -375,6 +450,7 @@ class GameBoard {
                     onComplete: () => {
                         candy.destroy(); // Remove candy from the scene after animation
                         this.grid[candy.row][candy.col] = null; // Remove candy from the grid
+                        this.scene.swapSound.play();
                     }
                 });
             });
