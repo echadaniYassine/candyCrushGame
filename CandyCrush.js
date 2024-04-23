@@ -6,7 +6,7 @@ export class CandyCrush extends Phaser.Scene {
         this.score = 0; // Initialize score
         this.level = 1; // Initialize level
         this.moves = 10; // Initialize moves
-        this.timer = 60; // Initialize timer (in seconds)
+        this.timer = null; // Initialize timer (in seconds)
         this.timerText = null; // Timer text object
         this.gameOver = false; // Game over flag
     }
@@ -17,11 +17,11 @@ export class CandyCrush extends Phaser.Scene {
             this.load.image('Layer ' + i, 'assets/Layer ' + i + '.png');
         }
         this.load.audio('swapSound', 'assets/CandyCrush.mp3');
-
         this.load.audio('background2', 'assets/CandyCrushSagaGame.mp3');
-
-
         this.load.image('background1', 'assets/background.jpg');
+        this.load.image('avatar1', 'assets/avatar.jpg');
+
+
 
 
     }
@@ -87,48 +87,91 @@ export class CandyCrush extends Phaser.Scene {
     showSettingsMenu() {
         // Destroy the existing settings menu if it exists
         this.destroySettingsMenu();
-
+    
         // Create a settings menu group
         this.settingsMenu = this.add.group();
-
+    
         // Add background for settings menu
-        const settingsBg = this.add.rectangle(this.cameras.main.centerX, this.cameras.main.centerY, 300, 200, 0x000000, 0.8);
+        const settingsBg = this.add.rectangle(this.cameras.main.centerX, this.cameras.main.centerY, 300, 400, 0x000000, 0.8);
         settingsBg.setOrigin(0.5);
         this.settingsMenu.add(settingsBg);
-
-        // Add sound on button
-        const soundOnButton = this.add.text(this.cameras.main.centerX - 50, this.cameras.main.centerY - 30, 'Sound On', { fontFamily: 'Arial', fontSize: 18, color: '#ffffff' });
+    
+        // Add sound on/off buttons
+        const soundOnButton = this.add.text(this.cameras.main.centerX - 50, this.cameras.main.centerY - 150, 'Sound On', { fontFamily: 'Arial', fontSize: 18, color: '#ffffff' });
         soundOnButton.setOrigin(0.5);
         soundOnButton.setInteractive();
         this.settingsMenu.add(soundOnButton);
-
-        // Add sound off button
-        const soundOffButton = this.add.text(this.cameras.main.centerX + 50, this.cameras.main.centerY - 30, 'Sound Off', { fontFamily: 'Arial', fontSize: 18, color: '#ffffff' });
+    
+        const soundOffButton = this.add.text(this.cameras.main.centerX + 50, this.cameras.main.centerY - 150, 'Sound Off', { fontFamily: 'Arial', fontSize: 18, color: '#ffffff' });
         soundOffButton.setOrigin(0.5);
         soundOffButton.setInteractive();
         this.settingsMenu.add(soundOffButton);
-
-        // Define the pointerdown event for the sound on button
+    
+        // Define the pointerdown events for the sound buttons
         soundOnButton.on('pointerdown', () => {
             this.soundEnabled = true;
             this.candyAudio.play();
             soundOnButton.setAlpha(1);
             soundOffButton.setAlpha(0.5);
-            // Destroy the settings menu
-            // this.destroySettingsMenu(); // Temporarily commented out
         });
-
-        // Define the pointerdown event for the sound off button
+    
         soundOffButton.on('pointerdown', () => {
             this.soundEnabled = false;
             this.candyAudio.stop();
             soundOnButton.setAlpha(0.5);
             soundOffButton.setAlpha(1);
-            // Destroy the settings menu
-            // this.destroySettingsMenu(); // Temporarily commented out
+        });
+    
+        // Add profile section
+        const profileHeader = this.add.text(this.cameras.main.centerX, this.cameras.main.centerY - 50, 'Profile', { fontFamily: 'Arial', fontSize: 24, color: '#ffffff' });
+        profileHeader.setOrigin(0.5);
+        this.settingsMenu.add(profileHeader);
+    
+        // Display current username
+        const usernameLabel = this.add.text(this.cameras.main.centerX - 80, this.cameras.main.centerY, 'Username:', { fontFamily: 'Arial', fontSize: 18, color: '#ffffff' });
+        usernameLabel.setOrigin(0.5);
+        this.settingsMenu.add(usernameLabel);
+    
+        const currentUsername = this.add.text(this.cameras.main.centerX + 80, this.cameras.main.centerY, 'Player1', { fontFamily: 'Arial', fontSize: 18, color: '#ffffff' });
+        currentUsername.setOrigin(0.5);
+        this.settingsMenu.add(currentUsername);
+    
+        // Display avatar (if available)
+        const avatarLabel = this.add.text(this.cameras.main.centerX - 80, this.cameras.main.centerY + 50, 'Avatar:', { fontFamily: 'Arial', fontSize: 18, color: '#ffffff' });
+        avatarLabel.setOrigin(0.5);
+        this.settingsMenu.add(avatarLabel);
+    
+        const currentAvatar = this.add.image(this.cameras.main.centerX + 80, this.cameras.main.centerY + 50, 'avatar1');
+        currentAvatar.setOrigin(0.5);
+        currentAvatar.setScale(0.01);
+
+        this.settingsMenu.add(currentAvatar);
+    
+        // Add button to change avatar
+        const changeAvatarButton = this.add.text(this.cameras.main.centerX, this.cameras.main.centerY + 100, 'Change Avatar', { fontFamily: 'Arial', fontSize: 18, color: '#ffffff' });
+        changeAvatarButton.setOrigin(0.5);
+        changeAvatarButton.setInteractive();
+        this.settingsMenu.add(changeAvatarButton);
+    
+        // Define the pointerdown event for changing avatar
+        changeAvatarButton.on('pointerdown', () => {
+            // Implement logic to change avatar
+            // For example, open a modal or display options for selecting a new avatar
+        });
+    
+        // Add button to edit profile
+        const editProfileButton = this.add.text(this.cameras.main.centerX, this.cameras.main.centerY + 150, 'Edit Profile', { fontFamily: 'Arial', fontSize: 18, color: '#ffffff' });
+        editProfileButton.setOrigin(0.5);
+        editProfileButton.setInteractive();
+        this.settingsMenu.add(editProfileButton);
+    
+        // Define the pointerdown event for editing profile
+        editProfileButton.on('pointerdown', () => {
+            // Implement logic to edit profile
+            // For example, open a modal with input fields to edit username
         });
     }
-
+    
     destroySettingsMenu() {
         // Destroy the settings menu
         if (this.settingsMenu) {
@@ -136,7 +179,7 @@ export class CandyCrush extends Phaser.Scene {
             this.settingsMenu = null;
         }
     }
-
+    
 
 
 
@@ -237,22 +280,37 @@ export class CandyCrush extends Phaser.Scene {
         const rankingText = this.add.text(this.cameras.main.centerX, this.cameras.main.centerY + 50, 'Your Score: ' + this.score, { fontFamily: 'Arial', fontSize: 32, color: '#ffffff' });
         rankingText.setOrigin(0.5);
 
-        const replayButton = this.add.text(900 / 2, 600, 'Replay', { fontFamily: 'Arial', fontSize: 24, color: '#ffffff' });
+        const replayButton = this.add.text(490, 600, 'Replay', { fontFamily: 'Arial', fontSize: 24, color: '#ffffff' });
         replayButton.setOrigin(1, 0);
         replayButton.setInteractive();
 
         // Define the pointerdown event for the replay button
         replayButton.on('pointerdown', () => {
-            // Stop the background music before restarting
-            this.candyAudio.stop();
-
-            // Restart the game
-            this.scene.restart('CandyCrush');
-
-            // Play the background music again
-            this.candyAudio.play();
+            // Reset the game
+            this.resetGame();
         });
     }
+
+    resetGame() {
+        // Destroy game over elements
+        this.scene.remove('backgroundImage');
+        this.scene.remove('gameOverText');
+        this.scene.remove('rankingText');
+        this.scene.remove('replayButton');
+
+        // Reset game state
+        this.selectedCandy = null;
+        this.score = 0;
+        this.level = 1;
+        this.moves = 10;
+        this.timer = 60;
+        this.gameOver = false;
+
+        // Restart the game
+        this.scene.restart('CandyCrush');
+    }
+
+
 
 
 
@@ -478,12 +536,26 @@ class GameBoard {
             for (let k = 0; k < emptySpaces; k++) {
                 const cellWidth = 900 / this.numCols;
                 const cellHeight = 700 / this.numRows;
-                const x = (this.scene.sys.game.config.width - (this.numCols * cellWidth)) / 2 + j * (cellWidth + this.marginX);
-                const y = (this.scene.sys.game.config.height - (this.numRows * cellHeight)) / 2 + k * (cellHeight + this.marginY);
-                //const candyType = Phaser.Math.Between(1, 7); // Random candy type for the cell
-                //const candy = new Candy(this.scene, x, y, candyType, k, j);
-                //this.grid[k][j] = candy;
+                const x = (900 - this.numCols * cellWidth) / 2 + j * cellWidth; // Adjusted x position calculation
+                const y = (700 - this.numRows * cellHeight) / 2 + (emptySpaces - k) * cellHeight; // Adjusted y position calculation
+
+                const candyType = Phaser.Math.Between(1, 7); // Random candy type for the cell
+                const candy = new Candy(this.scene, x, y, candyType, k, j);
+                candy.setScale(0);
+                this.grid[k][j] = candy;
+
+                // Animate candies to fall into position with a bounce effect
+                this.scene.tweens.add({
+                    targets: candy,
+                    y: (this.scene.sys.game.config.height - (this.numRows * cellHeight)) / 2 + k * cellHeight, // Adjusted y position calculation
+                    scaleX: 1,
+                    scaleY: 1,
+                    duration: 800,
+                    delay: k * 50, // Add delay based on position for staggered effect
+                    ease: 'Bounce.Out', // Use bounce out effect for animation
+                });
             }
         }
     }
+
 }

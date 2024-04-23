@@ -8,7 +8,7 @@ var config = {
     width: 900, // Increase game width
     height: 700, // Increase game height
     //scene: [StartScene,PreloadScene,CandyCrush],
-    scene: [StartScene, PreloadScene, CandyCrush],
+    scene: [CandyCrush],
     physics: {
         default: 'arcade',
         arcade: {
