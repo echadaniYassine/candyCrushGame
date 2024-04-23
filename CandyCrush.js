@@ -87,26 +87,26 @@ export class CandyCrush extends Phaser.Scene {
     showSettingsMenu() {
         // Destroy the existing settings menu if it exists
         this.destroySettingsMenu();
-    
+
         // Create a settings menu group
         this.settingsMenu = this.add.group();
-    
+
         // Add background for settings menu
         const settingsBg = this.add.rectangle(this.cameras.main.centerX, this.cameras.main.centerY, 300, 400, 0x000000, 0.8);
         settingsBg.setOrigin(0.5);
         this.settingsMenu.add(settingsBg);
-    
+
         // Add sound on/off buttons
         const soundOnButton = this.add.text(this.cameras.main.centerX - 50, this.cameras.main.centerY - 150, 'Sound On', { fontFamily: 'Arial', fontSize: 18, color: '#ffffff' });
         soundOnButton.setOrigin(0.5);
         soundOnButton.setInteractive();
         this.settingsMenu.add(soundOnButton);
-    
+
         const soundOffButton = this.add.text(this.cameras.main.centerX + 50, this.cameras.main.centerY - 150, 'Sound Off', { fontFamily: 'Arial', fontSize: 18, color: '#ffffff' });
         soundOffButton.setOrigin(0.5);
         soundOffButton.setInteractive();
         this.settingsMenu.add(soundOffButton);
-    
+
         // Define the pointerdown events for the sound buttons
         soundOnButton.on('pointerdown', () => {
             this.soundEnabled = true;
@@ -114,64 +114,64 @@ export class CandyCrush extends Phaser.Scene {
             soundOnButton.setAlpha(1);
             soundOffButton.setAlpha(0.5);
         });
-    
+
         soundOffButton.on('pointerdown', () => {
             this.soundEnabled = false;
             this.candyAudio.stop();
             soundOnButton.setAlpha(0.5);
             soundOffButton.setAlpha(1);
         });
-    
+
         // Add profile section
         const profileHeader = this.add.text(this.cameras.main.centerX, this.cameras.main.centerY - 50, 'Profile', { fontFamily: 'Arial', fontSize: 24, color: '#ffffff' });
         profileHeader.setOrigin(0.5);
         this.settingsMenu.add(profileHeader);
-    
+
         // Display current username
         const usernameLabel = this.add.text(this.cameras.main.centerX - 80, this.cameras.main.centerY, 'Username:', { fontFamily: 'Arial', fontSize: 18, color: '#ffffff' });
         usernameLabel.setOrigin(0.5);
         this.settingsMenu.add(usernameLabel);
-    
+
         const currentUsername = this.add.text(this.cameras.main.centerX + 80, this.cameras.main.centerY, 'Player1', { fontFamily: 'Arial', fontSize: 18, color: '#ffffff' });
         currentUsername.setOrigin(0.5);
         this.settingsMenu.add(currentUsername);
-    
+
         // Display avatar (if available)
         const avatarLabel = this.add.text(this.cameras.main.centerX - 80, this.cameras.main.centerY + 50, 'Avatar:', { fontFamily: 'Arial', fontSize: 18, color: '#ffffff' });
         avatarLabel.setOrigin(0.5);
         this.settingsMenu.add(avatarLabel);
-    
+
         const currentAvatar = this.add.image(this.cameras.main.centerX + 80, this.cameras.main.centerY + 50, 'avatar1');
         currentAvatar.setOrigin(0.5);
         currentAvatar.setScale(0.01);
 
         this.settingsMenu.add(currentAvatar);
-    
+
         // Add button to change avatar
         const changeAvatarButton = this.add.text(this.cameras.main.centerX, this.cameras.main.centerY + 100, 'Change Avatar', { fontFamily: 'Arial', fontSize: 18, color: '#ffffff' });
         changeAvatarButton.setOrigin(0.5);
         changeAvatarButton.setInteractive();
         this.settingsMenu.add(changeAvatarButton);
-    
+
         // Define the pointerdown event for changing avatar
         changeAvatarButton.on('pointerdown', () => {
             // Implement logic to change avatar
             // For example, open a modal or display options for selecting a new avatar
         });
-    
+
         // Add button to edit profile
         const editProfileButton = this.add.text(this.cameras.main.centerX, this.cameras.main.centerY + 150, 'Edit Profile', { fontFamily: 'Arial', fontSize: 18, color: '#ffffff' });
         editProfileButton.setOrigin(0.5);
         editProfileButton.setInteractive();
         this.settingsMenu.add(editProfileButton);
-    
+
         // Define the pointerdown event for editing profile
         editProfileButton.on('pointerdown', () => {
             // Implement logic to edit profile
             // For example, open a modal with input fields to edit username
         });
     }
-    
+
     destroySettingsMenu() {
         // Destroy the settings menu
         if (this.settingsMenu) {
@@ -179,7 +179,7 @@ export class CandyCrush extends Phaser.Scene {
             this.settingsMenu = null;
         }
     }
-    
+
 
 
 
@@ -318,6 +318,7 @@ export class CandyCrush extends Phaser.Scene {
 
 
 }
+
 
 class Candy extends Phaser.GameObjects.Sprite {
     constructor(scene, x, y, type, row, col) {
@@ -521,6 +522,7 @@ class GameBoard {
 
 
     fillEmptySpaces() {
+        //fillEmptySpaces() {
         for (let j = 0; j < this.numCols; j++) {
             let emptySpaces = 0;
             for (let i = this.numRows - 1; i >= 0; i--) {
@@ -557,5 +559,5 @@ class GameBoard {
             }
         }
     }
-
 }
+
